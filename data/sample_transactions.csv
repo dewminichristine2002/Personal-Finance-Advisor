@@ -1,0 +1,32 @@
+date,description,amount,category
+2026-03-01,Monthly Rent Payment,1200.00,housing
+2026-03-02,Grocery Store - Keells,85.50,food
+2026-03-03,Uber Ride to Office,12.00,transport
+2026-03-04,Netflix Subscription,15.99,entertainment
+2026-03-05,Electricity Bill,95.00,utilities
+2026-03-06,Pizza Hut Dinner,32.00,food
+2026-03-07,Amazon - Headphones,79.99,shopping
+2026-03-08,Gym Membership,45.00,health
+2026-03-09,Bus Pass Monthly,60.00,transport
+2026-03-10,Coffee Shop,5.50,food
+2026-03-11,Water Bill,30.00,utilities
+2026-03-12,Spotify Premium,9.99,entertainment
+2026-03-13,Bakery - Bread & Cakes,12.75,food
+2026-03-14,Mobile Phone Bill,55.00,utilities
+2026-03-15,Cinema Tickets,24.00,entertainment
+2026-03-16,Supermarket Weekly Shop,120.00,food
+2026-03-17,Parking Fee,8.00,transport
+2026-03-18,Doctor Visit - Checkup,75.00,health
+2026-03-19,Udemy Course - Python,29.99,education
+2026-03-20,Restaurant Dinner,48.00,food
+2026-03-21,Internet Bill,65.00,utilities
+2026-03-22,Clothing Store,95.00,shopping
+2026-03-23,Gas Station - Fuel,55.00,transport
+2026-03-24,Pharmacy - Vitamins,22.50,health
+2026-03-25,Game Purchase - Steam,39.99,entertainment
+2026-03-26,Grocery Store,67.80,food
+2026-03-27,Home Insurance,150.00,housing
+2026-03-28,Train Ticket,15.00,transport
+2026-03-29,Book Store - Textbooks,42.00,education
+2026-03-30,Concert Tickets,65.00,entertainment
+2026-03-31,Maintenance - Plumber,120.00,housing
