@@ -12,6 +12,7 @@ import json
 import os
 from typing import List, Dict, Any
 
+import crewai_bootstrap  # noqa: F401
 from crewai.tools import tool
 
 from observability.logger import AgentLogger

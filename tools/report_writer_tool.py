@@ -12,6 +12,7 @@ import os
 from datetime import datetime
 from typing import Any, Dict
 
+import crewai_bootstrap  # noqa: F401
 from crewai.tools import tool
 
 from config import OUTPUT_DIR
