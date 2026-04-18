@@ -7,6 +7,7 @@ transaction, and builds a per-category spending summary.
 
 from __future__ import annotations
 
+import crewai_bootstrap  # noqa: F401
 from crewai import Agent
 
 from config import LLM_STRING
