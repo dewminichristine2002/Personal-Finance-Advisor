@@ -12,7 +12,7 @@ import os
 import math
 import textwrap
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Iterable, List
 
 import crewai_bootstrap  # noqa: F401
 from crewai.tools import tool
@@ -29,6 +29,83 @@ def _format_currency(amount: float) -> str:
     return f"Rs. {amount:,.2f}"
 
 
+def _coerce_mapping(value: Any) -> Dict[str, Any]:
+    """Return a dict-like object from common summary shapes."""
+    if isinstance(value, dict):
+        return value
+
+    if isinstance(value, list):
+        merged: Dict[str, Any] = {}
+        for item in value:
+            if not isinstance(item, dict):
+                continue
+            category = item.get("category") or item.get("name") or item.get("label")
+            if category:
+                merged[str(category)] = item
+        return merged
+
+    return {}
+
+
+def _coerce_total(value: Any) -> float:
+    """Extract a numeric total from dicts, numbers, or list-like structures."""
+    if isinstance(value, dict):
+        raw_total = value.get("total", value.get("amount", 0.0))
+    elif isinstance(value, list):
+        raw_total = 0.0
+        for item in value:
+            if isinstance(item, dict):
+                raw_total += _coerce_total(item)
+            else:
+                try:
+                    raw_total += float(item)
+                except (TypeError, ValueError):
+                    continue
+    else:
+        raw_total = value
+
+    try:
+        return float(raw_total)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _coerce_count(value: Any) -> int:
+    """Extract a numeric transaction count from dicts or list-like structures."""
+    if isinstance(value, dict):
+        raw_count = value.get("count", value.get("transactions", 0))
+        try:
+            return int(raw_count)
+        except (TypeError, ValueError):
+            return 0
+
+    if isinstance(value, list):
+        return len(value)
+
+    return 0
+
+
+def _coerce_recommendations(value: Any) -> List[str]:
+    """Normalize recommendations into a list of strings."""
+    if isinstance(value, list):
+        recommendations: List[str] = []
+        for item in value:
+            if isinstance(item, str):
+                recommendations.append(item)
+            elif isinstance(item, dict):
+                recommendation = item.get("recommendation") or item.get("text") or item.get("message")
+                if recommendation:
+                    recommendations.append(str(recommendation))
+            elif item is not None:
+                recommendations.append(str(item))
+        return recommendations
+
+    if isinstance(value, str):
+        return [value]
+
+    return []
+
+
 def _build_markdown(data: Dict[str, Any]) -> str:
     """Render a Markdown report from the combined analysis data."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -38,17 +115,17 @@ def _build_markdown(data: Dict[str, Any]) -> str:
         "---\n",
     ]
 
-    budget = data.get("budget", {})
-    summary = data.get("spending_summary", {})
-    recommendations = data.get("recommendations", [])
+    budget = _coerce_mapping(data.get("budget", {}))
+    summary = _coerce_mapping(data.get("spending_summary", {}))
+    recommendations = _coerce_recommendations(data.get("recommendations", []))
 
     if budget:
         lines.append("## Budget Overview\n")
         lines.append(f"| Metric | Value |")
         lines.append(f"|--------|-------|")
-        lines.append(f"| Monthly Income | {_format_currency(budget.get('monthly_income', 0))} |")
-        lines.append(f"| Total Spent | {_format_currency(budget.get('total_spent', 0))} |")
-        remaining = budget.get("monthly_income", 0) - budget.get("total_spent", 0)
+        lines.append(f"| Monthly Income | {_format_currency(_coerce_total(budget.get('monthly_income', 0)))} |")
+        lines.append(f"| Total Spent | {_format_currency(_coerce_total(budget.get('total_spent', 0)))} |")
+        remaining = _coerce_total(budget.get("monthly_income", 0)) - _coerce_total(budget.get("total_spent", 0))
         lines.append(f"| Remaining | {_format_currency(remaining)} |")
         lines.append("")
 
@@ -56,13 +133,13 @@ def _build_markdown(data: Dict[str, Any]) -> str:
         lines.append("## 50/30/20 Budget Analysis\n")
         lines.append("| Category | Target | Actual | Difference |")
         lines.append("|----------|--------|--------|------------|")
-        targets = budget.get("targets", {})
-        actuals = budget.get("actuals", {})
-        diffs = budget.get("differences", {})
+        targets = _coerce_mapping(budget.get("targets", {}))
+        actuals = _coerce_mapping(budget.get("actuals", {}))
+        diffs = _coerce_mapping(budget.get("differences", {}))
         for key in ["needs", "wants", "savings"]:
-            t = targets.get(key, 0)
-            a = actuals.get(key, diffs.get(key, 0))
-            d = diffs.get(key, 0)
+            t = _coerce_total(targets.get(key, 0))
+            a = _coerce_total(actuals.get(key, diffs.get(key, 0)))
+            d = _coerce_total(diffs.get(key, 0))
             lines.append(
                 f"| {key.title()} | {_format_currency(t)} | {_format_currency(a)} | {_format_currency(d)} |"
             )
@@ -76,7 +153,7 @@ def _build_markdown(data: Dict[str, Any]) -> str:
             if cat.startswith("_"):
                 continue
             lines.append(
-                f"| {cat.title()} | {_format_currency(info.get('total', 0))} | {info.get('count', 0)} |"
+                f"| {str(cat).title()} | {_format_currency(_coerce_total(info))} | {_coerce_count(info)} |"
             )
         lines.append("")
 
