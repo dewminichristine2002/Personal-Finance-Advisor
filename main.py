@@ -7,7 +7,7 @@ Entry point for the local 4-agent finance pipeline.
 Run:
     python main.py
     python main.py --file path/to/data.csv
-    python main.py --income 6000
+    python main.py --income 60000
 """
 
 from __future__ import annotations
@@ -23,6 +23,11 @@ from pipeline import run_pipeline
 from state.global_state import GlobalState
 
 
+def _format_currency(amount: float) -> str:
+    """Format numeric values using Sri Lankan rupee notation."""
+    return f"Rs. {amount:,.2f}"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Personal Finance Advisor MAS")
     parser.add_argument(
@@ -33,8 +38,8 @@ def main() -> None:
     parser.add_argument(
         "--income",
         type=float,
-        default=5000.0,
-        help="Monthly income (default: 5000)",
+        default=50_000.0,
+        help="Monthly income in rupees (default: 50000)",
     )
     args = parser.parse_args()
 
@@ -52,7 +57,7 @@ def main() -> None:
     print("  Personal Finance Advisor - Multi-Agent System")
     print("=" * 60)
     print(f"  CSV File : {args.file}")
-    print(f"  Income   : ${args.income:,.2f}")
+    print(f"  Income   : {_format_currency(args.income)}")
     print(f"  Output   : {OUTPUT_DIR}")
     print(f"  Mode     : {PIPELINE_MODE}")
     print("=" * 60)
