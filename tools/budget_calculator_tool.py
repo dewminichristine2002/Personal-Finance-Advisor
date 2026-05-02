@@ -22,6 +22,11 @@ NEEDS_CATEGORIES = {"housing", "utilities", "transport", "health", "food", "educ
 WANTS_CATEGORIES = {"entertainment", "shopping"}
 
 
+def _format_currency(amount: float) -> str:
+    """Format numeric values using Sri Lankan rupee notation."""
+    return f"Rs. {amount:,.2f}"
+
+
 def _extract_total(value: Any) -> float:
     """Extract a numeric category total from either dict or scalar values."""
     if isinstance(value, dict):
@@ -108,33 +113,32 @@ def budget_calculator_tool(spending_summary_json: str, monthly_income: float) ->
     recommendations = []
     if diffs["needs"] < 0:
         recommendations.append(
-            f"Your essential spending exceeds the 50% target by ${abs(diffs['needs']):.2f}. "
+            f"Your essential spending exceeds the 50% target by {_format_currency(abs(diffs['needs']))}. "
             "Consider reviewing housing or food costs."
         )
     else:
         recommendations.append(
-            f"Essential spending is ${diffs['needs']:.2f} under the 50% target. Well done!"
+            f"Essential spending is {_format_currency(diffs['needs'])} under the 50% target. Well done!"
         )
 
     if diffs["wants"] < 0:
         recommendations.append(
-            f"Discretionary spending exceeds the 30% target by ${abs(diffs['wants']):.2f}. "
+            f"Discretionary spending exceeds the 30% target by {_format_currency(abs(diffs['wants']))}. "
             "Try cutting back on entertainment or shopping."
         )
     else:
         recommendations.append(
-            f"Discretionary spending is ${diffs['wants']:.2f} under the 30% target."
+            f"Discretionary spending is {_format_currency(diffs['wants'])} under the 30% target."
         )
 
     if diffs["savings"] < targets["savings"]:
-        gap = round(targets["savings"] - diffs["savings"], 2)
         recommendations.append(
-            f"You are saving ${diffs['savings']:.2f} this month. "
-            f"Aim to save at least ${targets['savings']:.2f} (20% of income)."
+            f"You are saving {_format_currency(diffs['savings'])} this month. "
+            f"Aim to save at least {_format_currency(targets['savings'])} (20% of income)."
         )
     else:
         recommendations.append(
-            f"Great savings! You have ${diffs['savings']:.2f} left over, exceeding the 20% goal."
+            f"Great savings! You have {_format_currency(diffs['savings'])} left over, exceeding the 20% goal."
         )
 
     result["budget"] = {

@@ -19,6 +19,7 @@ from config import OUTPUT_DIR, PIPELINE_MODE
 from observability.logger import AgentLogger
 from pipeline import run_pipeline
 from state.global_state import GlobalState
+from tools.report_writer_tool import _build_pdf_bytes_from_analysis
 
 
 st.set_page_config(
@@ -27,6 +28,11 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+
+def _format_currency(amount: float) -> str:
+    """Format numeric values using Sri Lankan rupee notation."""
+    return f"Rs. {amount:,.2f}"
 
 st.markdown(
     """
@@ -53,6 +59,17 @@ st.markdown(
         color: var(--ink);
         font-family: "Trebuchet MS", "Segoe UI", sans-serif;
     }
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+        height: 0 !important;
+    }
+    div[data-testid="stToolbar"] {
+        right: 1rem;
+        top: 0.4rem;
+    }
+    div[data-testid="stDecoration"] {
+        display: none;
+    }
     .stApp h1, .stApp h2, .stApp h3 {
         font-family: "Cambria", "Georgia", serif;
         letter-spacing: -0.02em;
@@ -78,7 +95,7 @@ st.markdown(
         border-radius: 16px;
     }
     .block-container {
-        padding-top: 2.2rem;
+        padding-top: 0.9rem;
         padding-bottom: 3rem;
     }
     .main-header {
@@ -413,11 +430,11 @@ st.markdown(
 with st.sidebar:
     st.markdown("## Settings")
     monthly_income = st.number_input(
-        "Monthly Income ($)",
+        "Monthly Income (Rs.)",
         min_value=100.0,
         max_value=1_000_000.0,
-        value=5000.0,
-        step=500.0,
+        value=50_000.0,
+        step=5_000.0,
     )
 
     st.markdown("---")
@@ -677,10 +694,10 @@ if csv_path and st.button("Run Finance Analysis", type="primary", use_container_
 
     if budget_data:
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Monthly Income", f"${budget_data.get('monthly_income', 0):,.2f}")
-        m2.metric("Total Spent", f"${budget_data.get('total_spent', 0):,.2f}")
+        m1.metric("Monthly Income", _format_currency(budget_data.get("monthly_income", 0)))
+        m2.metric("Total Spent", _format_currency(budget_data.get("total_spent", 0)))
         remaining = budget_data.get("monthly_income", 0) - budget_data.get("total_spent", 0)
-        m3.metric("Remaining", f"${remaining:,.2f}")
+        m3.metric("Remaining", _format_currency(remaining))
         savings_pct = (remaining / budget_data.get("monthly_income", 1)) * 100
         m4.metric("Savings Rate", f"{savings_pct:.1f}%")
 
@@ -696,7 +713,7 @@ if csv_path and st.button("Run Finance Analysis", type="primary", use_container_
             col_chart, col_table = st.columns([1, 1])
             with col_chart:
                 df_chart = pd.DataFrame(
-                    {"Category": list(chart_data.keys()), "Amount ($)": list(chart_data.values())}
+                    {"Category": list(chart_data.keys()), "Amount (Rs.)": list(chart_data.values())}
                 )
                 st.markdown('<div class="viz-shell">', unsafe_allow_html=True)
                 st.vega_lite_chart(
@@ -711,7 +728,7 @@ if csv_path and st.button("Run Finance Analysis", type="primary", use_container_
                                 "axis": {"labelAngle": -90, "labelColor": "#6b5a8d", "title": None},
                             },
                             "y": {
-                                "field": "Amount ($)",
+                                "field": "Amount (Rs.)",
                                 "type": "quantitative",
                                 "axis": {
                                     "labelColor": "#6b5a8d",
@@ -724,7 +741,7 @@ if csv_path and st.button("Run Finance Analysis", type="primary", use_container_
                             },
                             "tooltip": [
                                 {"field": "Category", "type": "nominal"},
-                                {"field": "Amount ($)", "type": "quantitative", "format": ",.2f"},
+                                {"field": "Amount (Rs.)", "type": "quantitative", "format": ",.2f"},
                             ],
                         },
                         "config": {
@@ -744,7 +761,7 @@ if csv_path and st.button("Run Finance Analysis", type="primary", use_container_
                     table_rows.append(
                         {
                             "Category": cat.title(),
-                            "Amount": f"${info.get('total', 0):,.2f}",
+                            "Amount": _format_currency(info.get("total", 0)),
                             "Transactions": info.get("count", 0),
                         }
                     )
@@ -763,13 +780,20 @@ if csv_path and st.button("Run Finance Analysis", type="primary", use_container_
         st.subheader("Generated Report")
         with open(report_path, "r", encoding="utf-8") as handle:
             report_content = handle.read()
+        pdf_bytes = _build_pdf_bytes_from_analysis(
+            {
+                "budget": budget_data,
+                "spending_summary": spending,
+                "recommendations": recs,
+            }
+        )
         with st.expander("View Full Markdown Report", expanded=False):
             st.markdown(report_content)
         st.download_button(
-            "Download Report",
-            data=report_content,
-            file_name=os.path.basename(report_path),
-            mime="text/markdown",
+            "Download Report (PDF)",
+            data=pdf_bytes,
+            file_name=os.path.basename(report_path).replace(".md", ".pdf"),
+            mime="application/pdf",
         )
 
     trace = AgentLogger.read_trace()
