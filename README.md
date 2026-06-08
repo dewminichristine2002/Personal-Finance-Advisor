@@ -67,7 +67,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## Running the System
+## Running the System (2 options)
 
 ### Option A: Terminal (CLI)
 
