@@ -8,6 +8,7 @@ global state for downstream agents.
 
 from __future__ import annotations
 
+import crewai_bootstrap  # noqa: F401
 from crewai import Agent
 
 from config import LLM_STRING

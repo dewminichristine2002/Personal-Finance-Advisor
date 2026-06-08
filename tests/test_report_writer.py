@@ -20,7 +20,11 @@ import pytest
 
 from config import OUTPUT_DIR
 from state.global_state import GlobalState
-from tools.report_writer_tool import report_writer_tool, _build_markdown
+from tools.report_writer_tool import (
+    report_writer_tool,
+    _build_markdown,
+    _build_pdf_bytes_from_analysis,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -44,8 +48,8 @@ SAMPLE_DATA = {
         "entertainment": {"total": 100, "count": 3},
     },
     "recommendations": [
-        "Essential spending is $500.00 under the 50% target. Well done!",
-        "Discretionary spending is $700.00 under the 30% target.",
+        "Essential spending is Rs. 500.00 under the 50% target. Well done!",
+        "Discretionary spending is Rs. 700.00 under the 30% target.",
     ],
 }
 
@@ -62,7 +66,7 @@ class TestBuildMarkdown:
     def test_contains_budget_table(self) -> None:
         md = _build_markdown(SAMPLE_DATA)
         assert "Monthly Income" in md
-        assert "$5,000.00" in md
+        assert "Rs. 5,000.00" in md
 
     def test_contains_category_table(self) -> None:
         md = _build_markdown(SAMPLE_DATA)
@@ -77,6 +81,12 @@ class TestBuildMarkdown:
     def test_empty_data_no_crash(self) -> None:
         md = _build_markdown({})
         assert "Personal Finance Report" in md
+
+    def test_pdf_bytes_start_with_pdf_header(self) -> None:
+        pdf_bytes = _build_pdf_bytes_from_analysis(SAMPLE_DATA)
+        assert pdf_bytes.startswith(b"%PDF-1.4")
+        assert pdf_bytes.endswith(b"%%EOF")
+        assert len(pdf_bytes) > 1000
 
 
 # ---------------------------------------------------------------------------
